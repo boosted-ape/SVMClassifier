@@ -15,6 +15,8 @@ Calculate Z* = ZP*. This new matrix, Z*, is a centered/standardized version of X
 //use SMO/coordinate ascent to solve SVM
 
 import (
+	"fmt"
+	"log"
 	"os"
 
 	"gocv.io/x/gocv"
@@ -23,6 +25,14 @@ import (
 func pca() {
 	//image matrix
 	image_folder := os.Args[1]
-	os.Chdir(image_folder)
+	if err := os.Chdir(image_folder); err != nil {
+		log.Fatal(err)
+		fmt.Println(err)
+	}
+	files, err := os.ReadDir(image_folder)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	img := gocv.NewMat()
 }
