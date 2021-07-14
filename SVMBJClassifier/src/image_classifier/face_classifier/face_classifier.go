@@ -11,5 +11,18 @@ Take the matrix Z, transpose it, and multiply the transposed matrix by Z. (Writi
 Take the eigenvalues λ₁, λ₂, …, λp and sort them from largest to smallest. In doing so, sort the eigenvectors in P accordingly. (For example, if λ₂ is the largest eigenvalue, then take the second column of P and place it in the first column position.) Depending on the computing package, this may be done automatically. Call this sorted matrix of eigenvectors P*. (The columns of P* should be the same as the columns of P, but perhaps in a different order.) Note that these eigenvectors are independent of one another.
 Calculate Z* = ZP*. This new matrix, Z*, is a centered/standardized version of X but now each observation is a combination of the original variables, where the weights are determined by the eigenvector. As a bonus, because our eigenvectors in P* are independent of one another, each column of Z* is also independent of one another!*/
 //If Y variable exists and is part of the data, then separate your data into Y and X, as defined above -- we'll mostly be working with X.
-//map onto SVM, hard margin, polynomic kernel
-//use coordinate point descent to solve SVM
+//map onto SVM, hard margin, gaussian RBF kernel
+//use SMO/coordinate ascent to solve SVM
+
+import (
+	"os"
+
+	"gocv.io/x/gocv"
+)
+
+func pca() {
+	//image matrix
+	image_folder := os.Args[1]
+	os.Chdir(image_folder)
+	img := gocv.NewMat()
+}
