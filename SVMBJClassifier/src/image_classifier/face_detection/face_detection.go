@@ -55,7 +55,6 @@ func main() {
 		}
 
 		rects := classifier.DetectMultiScale(img)
-		fmt.Printf("found %d faces\n", len(rects))
 
 		for _, r := range rects {
 			gocv.Rectangle(&img, r, blue, 3)
