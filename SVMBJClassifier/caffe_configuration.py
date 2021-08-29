@@ -26,6 +26,6 @@ def deprocess_image():
     image[image<0], image[image>255] = 0, 255
 
     image = np.round(image)
-    image = np.require(image, dtype=np.uint8)
+    image = np.require(image, dtype=np.uint8) #to download scripts to download imagenet scripts
 
     return image
