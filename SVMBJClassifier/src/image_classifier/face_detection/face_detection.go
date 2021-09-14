@@ -59,7 +59,6 @@ func main() {
 		for _, r := range rects {
 			gocv.Rectangle(&img, r, blue, 3)
 
-			imgFace := img.Region(r)
 			// caffe deep learning model on here
 			size := gocv.GetTextSize("Human", gocv.FontHersheyPlain, 1.2, 2)
 			pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
