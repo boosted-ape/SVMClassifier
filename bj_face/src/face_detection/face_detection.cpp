@@ -82,11 +82,14 @@ int main(int argc, const char* argv[]){
     //
     //      cv::face::LBPHFaceRecognizer::create(1,8,8,8,123.0)
     //
-    Ptr<LBPHFaceRecognizer> model = LBPHFaceRecognizer::create();
+    Ptr<LBPHFaceRecognizer> model = LBPHFaceRecognizer::create(1,8,8,8,123.0);
     model->train(images, labels);
     // The following line predicts the label of a given
     // test image:
-    int predictedLabel = model->predict(testSample);
+    int predictedLabel = -1;
+    double confidence = 0.0;
+    model->predict(testSample, predictedLabel, confidence);
+
     //
     // To get the confidence of a prediction call the model with:
     //
@@ -94,7 +97,7 @@ int main(int argc, const char* argv[]){
     //      double confidence = 0.0;
     //      model->predict(testSample, predictedLabel, confidence);
     //
-    string result_message = format("Predicted class = %d / Actual class = %d.", predictedLabel, testLabel);
+    string result_message = format("Predicted class = %d / Actual class = %d./ Confidence = %d", predictedLabel, testLabel, confidence);
     cout << result_message << endl;
     // First we'll use it to set the threshold of the LBPHFaceRecognizer
     // to 0.0 without retraining the model. This can be useful if
