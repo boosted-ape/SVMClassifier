@@ -100,7 +100,7 @@ int main(int argc, const char* argv[]){
     // to 0.0 without retraining the model. This can be useful if
     // you are evaluating the model:
     //
-    model->setThreshold(0.0);
+    
     // Now the threshold of this model is set to 0.0. A prediction
     // now returns -1, as it's impossible to have a distance below
     // it
