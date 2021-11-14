@@ -1,6 +1,9 @@
 #include "opencv2/core.hpp"
 #include "opencv2/face.hpp"
 #include "opencv2/highgui.hpp"
+#include "opencv2/objdetect.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/videoio.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -9,6 +12,8 @@
 using namespace cv;
 using namespace cv::face;
 using namespace std;
+
+CascadeClassifier face_cascade;
 
 // read csv for input files
 static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';'){
@@ -32,14 +37,18 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 
 int main(int argc, const char* argv[]){
     //check for valid argument
-    if (argc != 2) {
-        cout << "usage:" << argv[0] << "csv.ext" << endl;
+    if (argc != 4) {
+        cout << "usage:" << argv[0] << " csv.ext CameraID Classifier XML file" << endl;
         exit(1);
     }
 
+    
     string fn_csv = string(argv[1]);
+    int CameraID = atoi(argv[2]);
+    string XMLFile = argv[3];
     vector<Mat> images;
     vector<int> labels;
+
     try{
         read_csv(fn_csv, images, labels);
     }catch ( const cv::Exception& e) {
@@ -47,15 +56,62 @@ int main(int argc, const char* argv[]){
         exit(1);
     }
 
+    if( !face_cascade.load(XMLFile)){
+        cout << "(!)-- Error loading face cascade \n";
+    }
+
+    VideoCapture capture;
+    capture.open(CameraID);
+    if( ! capture.isOpened()){
+        cout << "Error Opening Device\n";
+        exit(1);
+    }
+   
+   Mat frame;
+   while ( capture.read(frame)){
+       if(frame.empty()){
+           cout << "(!) No Captured Frame!\n";
+           break;
+       }
+       detectAndRecognise(frame, images, labels);
+
+       if( waitKey(10) == 27){
+           break;
+       }
+       return 0;
+   }
+
     if(images.size() <= 1){
         string error_message = "this demo needs more than 1 image to work";
         CV_Error(Error::StsError, error_message);
     }
+}
     // The following lines simply get the last images from
     // your dataset and remove it from the vector. This is
-    // done, so that the training data (which we learn the
+    // done, so  that the training data (which we learn the
     // cv::LBPHFaceRecognizer on) and the test data we test
     // the model with, do not overlap.
+void detectAndRecognise(Mat frame, vector<Mat> images, vector<int> labels){
+    Mat frame_gray;
+    cvtColor(frame, frame_gray,COLOR_BGR2GRAY);
+    equalizeHist( frame_gray, frame_gray);
+    Ptr<LBPHFaceRecognizer> model = LBPHFaceRecognizer::create(1,8,8,8,123.0);
+    model->train(images, labels);
+    // The following line predicts the label of a given
+    // test image:
+    int predictedLabel = -1;
+    double confidence = 0.0;
+    
+    std::vector<Rect> faces;
+    face_cascade.detectMultiScale(frame_gray, faces);
+    
+    for(size_t i = 0; i <faces.size(); i++){
+        Point center( faces[i].x + faces[i].width/2, faces[i].y + faces[i].height/2 );
+        ellipse( frame, center, Size( faces[i].width/2, faces[i].height/2 ), 0, 0, 360, Scalar( 255, 0, 255 ), 4 );
+        Mat faceROI = frame_gray(faces[i])
+        model->predict(faceROI, predictedLabel, confidence);
+    }
+    
     Mat testSample = images[images.size() - 1];
     int testLabel = labels[labels.size() - 1];
     images.pop_back();
@@ -82,12 +138,7 @@ int main(int argc, const char* argv[]){
     //
     //      cv::face::LBPHFaceRecognizer::create(1,8,8,8,123.0)
     //
-    Ptr<LBPHFaceRecognizer> model = LBPHFaceRecognizer::create(1,8,8,8,123.0);
-    model->train(images, labels);
-    // The following line predicts the label of a given
-    // test image:
-    int predictedLabel = -1;
-    double confidence = 0.0;
+
     model->predict(testSample, predictedLabel, confidence);
 
     //
@@ -125,5 +176,4 @@ int main(int argc, const char* argv[]){
     vector<Mat> histograms = model->getHistograms();
     // But should I really visualize it? Probably the length is interesting:
     cout << "Size of the histograms: " << histograms[0].total() << endl;
-    return 0;
 }
