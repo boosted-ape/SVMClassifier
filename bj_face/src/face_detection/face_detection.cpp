@@ -4,6 +4,7 @@
 #include "opencv2/objdetect.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/videoio.hpp"
+#include <string>
 
 #include <iostream>
 #include <fstream>
@@ -63,6 +64,7 @@ void detectAndRecognise(Mat frame, vector<Mat> images, vector<int> labels){
         ellipse( frame, center, Size( faces[i].width/2, faces[i].height/2 ), 0, 0, 360, Scalar( 255, 0, 255 ), 4 );
         Mat faceROI = frame_gray(faces[i]);
         model->predict(faceROI, predictedLabel, confidence);
+        putText( frame, to_string(predictedLabel), center, FONT_HERSHEY_COMPLEX, 10, cv::Scalar(255.0,0.0,0.0,255.0));
         string result_message = format("Predicted class = %d / Confidence = %d", predictedLabel, confidence);
         cout << result_message << endl;
     }
