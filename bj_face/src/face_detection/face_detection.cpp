@@ -13,6 +13,10 @@ using namespace cv;
 using namespace cv::face;
 using namespace std;
 
+//void detectAndRecognise(Mat frame, vector<Mat> images, vector<int> labels);
+Ptr<LBPHFaceRecognizer> model = LBPHFaceRecognizer::create();
+
+
 CascadeClassifier face_cascade;
 
 // read csv for input files
@@ -35,58 +39,7 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
     }
 }
 
-int main(int argc, const char* argv[]){
-    //check for valid argument
-    if (argc != 4) {
-        cout << "usage:" << argv[0] << " csv.ext CameraID Classifier XML file" << endl;
-        exit(1);
-    }
-
-    
-    string fn_csv = string(argv[1]);
-    int CameraID = atoi(argv[2]);
-    string XMLFile = argv[3];
-    vector<Mat> images;
-    vector<int> labels;
-
-    try{
-        read_csv(fn_csv, images, labels);
-    }catch ( const cv::Exception& e) {
-        cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
-        exit(1);
-    }
-
-    if( !face_cascade.load(XMLFile)){
-        cout << "(!)-- Error loading face cascade \n";
-    }
-
-    VideoCapture capture;
-    capture.open(CameraID);
-    if( ! capture.isOpened()){
-        cout << "Error Opening Device\n";
-        exit(1);
-    }
-   
-   Mat frame;
-   while ( capture.read(frame)){
-       if(frame.empty()){
-           cout << "(!) No Captured Frame!\n";
-           break;
-       }
-       detectAndRecognise(frame, images, labels);
-
-       if( waitKey(10) == 27){
-           break;
-       }
-       return 0;
-   }
-
-    if(images.size() <= 1){
-        string error_message = "this demo needs more than 1 image to work";
-        CV_Error(Error::StsError, error_message);
-    }
-}
-    // The following lines simply get the last images from
+// The following lines simply get the last images from
     // your dataset and remove it from the vector. This is
     // done, so  that the training data (which we learn the
     // cv::LBPHFaceRecognizer on) and the test data we test
@@ -95,8 +48,8 @@ void detectAndRecognise(Mat frame, vector<Mat> images, vector<int> labels){
     Mat frame_gray;
     cvtColor(frame, frame_gray,COLOR_BGR2GRAY);
     equalizeHist( frame_gray, frame_gray);
-    Ptr<LBPHFaceRecognizer> model = LBPHFaceRecognizer::create(1,8,8,8,123.0);
-    model->train(images, labels);
+
+
     // The following line predicts the label of a given
     // test image:
     int predictedLabel = -1;
@@ -108,10 +61,14 @@ void detectAndRecognise(Mat frame, vector<Mat> images, vector<int> labels){
     for(size_t i = 0; i <faces.size(); i++){
         Point center( faces[i].x + faces[i].width/2, faces[i].y + faces[i].height/2 );
         ellipse( frame, center, Size( faces[i].width/2, faces[i].height/2 ), 0, 0, 360, Scalar( 255, 0, 255 ), 4 );
-        Mat faceROI = frame_gray(faces[i])
+        Mat faceROI = frame_gray(faces[i]);
         model->predict(faceROI, predictedLabel, confidence);
+        string result_message = format("Predicted class = %d / Confidence = %d", predictedLabel, confidence);
+        cout << result_message << endl;
     }
-    
+
+    imshow("Capture - Face detection", frame);
+    /*
     Mat testSample = images[images.size() - 1];
     int testLabel = labels[labels.size() - 1];
     images.pop_back();
@@ -176,4 +133,70 @@ void detectAndRecognise(Mat frame, vector<Mat> images, vector<int> labels){
     vector<Mat> histograms = model->getHistograms();
     // But should I really visualize it? Probably the length is interesting:
     cout << "Size of the histograms: " << histograms[0].total() << endl;
+    */
 }
+
+
+int main(int argc, const char* argv[]){
+    //check for valid argument
+    if (argc != 4) {
+        cout << "usage:" << argv[0] << " csv.ext CameraID Classifier XML file" << endl;
+        exit(1);
+    }
+
+    
+    string fn_csv = string(argv[1]);
+    int CameraID = atoi(argv[2]);
+    string face_cascade_name = argv[3];
+    vector<Mat> images;
+    vector<int> labels;
+
+    
+
+    try{
+        read_csv(fn_csv, images, labels);
+    }catch ( const cv::Exception& e) {
+        cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
+        exit(1);
+    }
+    model->train(images, labels);
+
+    if( !face_cascade.load( face_cascade_name ) )
+    {
+        cout << "--(!)Error loading face cascade\n";
+        return -1;
+    };
+
+    int camera_device = atoi(argv[1]);
+    VideoCapture capture;
+    //-- 2. Read the video stream
+    capture.open( camera_device );
+    if ( ! capture.isOpened() )
+    {
+        cout << "--(!)Error opening video capture\n";
+        return -1;
+    }
+    Mat frame;
+    while ( capture.read(frame) )
+    {
+        if( frame.empty() )
+        {
+            cout << "--(!) No captured frame -- Break!\n";
+            break;
+        }
+        //-- 3. Apply the classifier to the frame
+        detectAndRecognise( frame , images, labels);
+        if( waitKey(10) == 27 )
+        {
+            break; // escape
+        }
+    }
+    return 0;
+
+
+    if(images.size() <= 1){
+        string error_message = "this demo needs more than 1 image to work";
+        CV_Error(Error::StsError, error_message);
+    }
+}
+    
